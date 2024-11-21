@@ -7,7 +7,7 @@ class AuthProvider extends ChangeNotifier {
   bool get isAuthenticated => _isAuthenticated;
   String? get userId => _userId;
 
-  login(String email,String password){
+   Future<void> login(String email,String password) async{
     _isAuthenticated = true;
     _userId = 'user123';
     notifyListeners();
