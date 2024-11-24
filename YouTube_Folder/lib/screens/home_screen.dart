@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:provider/provider.dart';
+import 'package:youtube_app/providers/video_provider.dart';
 import 'package:youtube_app/screens/profile_screen.dart';
 import 'package:youtube_app/screens/search_screen.dart';
+import 'package:youtube_app/widgets/video_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -11,14 +14,40 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  var _selectedIndex = 0;
+
+  final _scrollController = ScrollController();
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      context.read<VideoProvider>().fetchVideos();
+    });
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      context.read<VideoProvider>().fetchVideos();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         title: Image.network(
-          'https://andreaelectronics.com/wp-content/uploads/2015/06/YouTube-Transparent-Logo.png',
-          height: 50,
+          'https://logos-world.net/wp-content/uploads/2020/04/YouTube-Logo.png',
+          height: 60,
         ),
         actions: [
           IconButton(
@@ -51,9 +80,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(builder: (_) => const ProfileScreen()));
               },
               child: const CircleAvatar(
-                backgroundColor: Colors.grey,
+                backgroundColor: Color.fromARGB(255, 248, 246, 246),
                 radius: 20,
-                child: Icon(Icons.person),
+                child: Icon(
+                  Icons.person,
+                  color: Colors.grey,
+                ),
               ),
             ),
           ),
@@ -78,34 +110,67 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             )),
       ),
+      body: Consumer<VideoProvider>(builder: (context, videoProvider, child) {
+        if (videoProvider.videos.isEmpty && videoProvider.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+        return RefreshIndicator(
+            child: ListView.builder(
+              controller: _scrollController,
+              itemCount: videoProvider.videos.length + 1,
+              itemBuilder: (context, index) {
+                if (index == videoProvider.videos.length) {
+                  return videoProvider.isLoading
+                      ? Container(
+                          padding: const EdgeInsets.all(16.0),
+                          alignment: Alignment.center,
+                          child: const CircularProgressIndicator(),
+                        )
+                      : const SizedBox();
+                }
+                return VideoCard(video: videoProvider.videos[index]);
+              },
+            ),
+            onRefresh: () => videoProvider.refreshVideos());
+      }),
       bottomNavigationBar: BottomAppBar(
         shape: const CircularNotchedRectangle(),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             IconButton(
-                onPressed: () {},
-                icon: const Icon(
+                onPressed: () {
+                  _onItemTapped(0);
+                },
+                icon: Icon(
                   Icons.home,
-                  color: Colors.black,
+                  color: _selectedIndex == 0 ? Colors.red : Colors.black,
                 )),
             IconButton(
-                onPressed: () {},
-                icon: const Icon(
+                onPressed: () {
+                  _onItemTapped(1);
+                },
+                icon: Icon(
                   Icons.explore,
-                  color: Colors.black,
+                  color: _selectedIndex == 1 ? Colors.red : Colors.black,
                 )),
             IconButton(
-                onPressed: () {},
-                icon: const Icon(
+                onPressed: () {
+                  _onItemTapped(2);
+                },
+                icon: Icon(
                   Icons.subscriptions,
-                  color: Colors.black,
+                  color: _selectedIndex == 2 ? Colors.red : Colors.black,
                 )),
             IconButton(
-                onPressed: () {},
-                icon: const Icon(
+                onPressed: () {
+                  _onItemTapped(3);
+                },
+                icon: Icon(
                   Icons.video_library,
-                  color: Colors.black,
+                  color: _selectedIndex == 3 ? Colors.red : Colors.black,
                 ))
           ],
         ),
@@ -124,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Chip(
         label: Text(label),
-        backgroundColor: const Color.fromARGB(255, 135, 145, 150),
+        backgroundColor: Color.fromARGB(255, 233, 236, 238),
       ),
     );
   }
